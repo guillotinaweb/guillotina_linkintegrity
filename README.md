@@ -52,7 +52,9 @@ Working with linked content:
 import guillotina_linkintegrity as li
 
 await li.get_links(ob)
-await li.update_links(ob, content)
+await li.add_links(ob, [ob2, ob3])
+await li.remove_links(ob, [ob2, ob3])
+await li.update_links_from_html(ob, content)
 ```
 
 How about aliases:

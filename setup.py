@@ -15,7 +15,8 @@ setup(
     long_description_content_type='text/markdown',
     install_requires=[
         'guillotina',
-        'pypika'
+        'pypika',
+        'lxml'
     ],
     author='Nathan Van Gheem',
     author_email='vangheem@gmail.com',

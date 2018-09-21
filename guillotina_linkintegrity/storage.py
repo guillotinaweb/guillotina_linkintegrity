@@ -11,10 +11,6 @@ logger = logging.getLogger(__name__)
 
 
 _aliases_schema = {
-    'alias_id': 'VARCHAR(32) NOT NULL PRIMARY KEY',  # will be generated uuid
-    'container_id': (
-        f'VARCHAR({MAX_OID_LENGTH}) NOT NULL '
-        'REFERENCES objects ON DELETE CASCADE'),
     'zoid': (
         f'VARCHAR({MAX_OID_LENGTH}) NOT NULL '
         'REFERENCES objects ON DELETE CASCADE'),
@@ -28,16 +24,16 @@ _links_schema = {
         'REFERENCES objects ON DELETE CASCADE'),
     'target_id': (
         f'VARCHAR({MAX_OID_LENGTH}) NOT NULL '
-        'REFERENCES objects ON DELETE CASCADE'),
+        'REFERENCES objects ON DELETE CASCADE')
 }
 
 
 _initialize_statements = [
-    'CREATE INDEX IF NOT EXISTS alias_id ON aliases (alias_id);',
-    'CREATE INDEX IF NOT EXISTS alias_container_id ON aliases (container_id);',  # noqa
     'CREATE INDEX IF NOT EXISTS alias_zoid ON aliases (zoid);',
     'CREATE INDEX IF NOT EXISTS alias_path ON aliases (path);',
-    'CREATE INDEX IF NOT EXISTS alias_moved ON aliases (moved);'
+    'CREATE INDEX IF NOT EXISTS alias_moved ON aliases (moved);',
+    'CREATE INDEX IF NOT EXISTS link_source_id ON links (source_id);',
+    'CREATE INDEX IF NOT EXISTS link_target_id ON links (target_id);',
 ]
 
 
@@ -51,7 +47,8 @@ async def initialize(event):
         return
 
     statements = [
-        get_table_definition('aliases', _aliases_schema),
+        get_table_definition(
+            'aliases', _aliases_schema, primary_keys=('zoid', 'path')),
         get_table_definition(
             'links', _links_schema, primary_keys=('source_id', 'target_id'))
     ]
