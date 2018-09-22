@@ -12,3 +12,4 @@ def includeme(root):
     """
     configure.scan('guillotina_linkintegrity.api')
     configure.scan('guillotina_linkintegrity.storage')
+    configure.scan('guillotina_linkintegrity.subscribers')

@@ -2,11 +2,11 @@ import os
 
 from guillotina.interfaces import IContainer
 from guillotina.transactions import get_transaction
-from guillotina.utils import get_content_path, get_current_request, get_object_url
-from guillotina_linkintegrity.parser import extract_links
+from guillotina.utils import (get_content_path, get_current_request,
+                              get_object_url)
+from lxml import html
 from pypika import PostgreSQLQuery as Query
 from pypika import Table
-from lxml import html
 
 aliases_table = Table('aliases')
 links_table = Table('links')
@@ -32,42 +32,54 @@ async def get_aliases(ob):
     return data
 
 
-async def add_alias(ob, path, moved=True):
-    path = '/' + path.strip('/')
+async def add_aliases(ob, paths: list, container=None, moved=True):
+    if container is None:
+        req = get_current_request()
+        container = req.container
     txn = get_transaction()
     query = Query.into(aliases_table).columns(
-        'zoid', 'path', 'moved').insert(
-        ob._p_oid,
-        path,
-        moved
-    )
+        'zoid', 'container_id', 'path', 'moved')
+    for path in paths:
+        path = '/' + path.strip('/')
+        query = query.insert(
+            ob._p_oid,
+            container._p_oid,
+            path,
+            moved
+        )
+
     storage = txn.manager._storage
     async with storage._pool.acquire() as conn:
         await conn.execute(str(query))
 
 
-async def remove_alias(ob, path):
+async def remove_aliases(ob, paths: list):
     txn = get_transaction()
-    query = Query.from_(aliases_table).where(
-        (aliases_table.zoid == ob._p_oid) &
-        (aliases_table.path == path)
-    )
-    storage = txn.manager._storage
-    async with storage._pool.acquire() as conn:
-        await conn.execute(str(query.delete()))
+    for path in paths:
+        query = Query.from_(aliases_table).where(
+            (aliases_table.zoid == ob._p_oid) &
+            (aliases_table.path == path)
+        )
+        storage = txn.manager._storage
+        async with storage._pool.acquire() as conn:
+            await conn.execute(str(query.delete()))
 
 
 async def get_inherited_aliases(ob):
     ids_to_lookup = {}
-    context = ob
+    context = ob.__parent__
     while context is not None and not IContainer.providedBy(context):
         ids_to_lookup[context._p_oid] = context
         context = context.__parent__
 
+    if len(ids_to_lookup) == 0:
+        return []
+
     query = Query.from_(aliases_table).select(
         aliases_table.zoid, aliases_table.path, aliases_table.moved
     ).where(
-        aliases_table.zoid.isin(list(ids_to_lookup.keys()))
+        aliases_table.zoid.isin(list(ids_to_lookup.keys())) &
+        aliases_table.moved == True  # noqa
     )
 
     txn = get_transaction()

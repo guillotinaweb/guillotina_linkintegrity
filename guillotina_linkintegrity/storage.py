@@ -14,6 +14,9 @@ _aliases_schema = {
     'zoid': (
         f'VARCHAR({MAX_OID_LENGTH}) NOT NULL '
         'REFERENCES objects ON DELETE CASCADE'),
+    'container_id': (
+        f'VARCHAR({MAX_OID_LENGTH}) NOT NULL '
+        'REFERENCES objects ON DELETE CASCADE'),
     'path': 'VARCHAR(2000)',
     'moved': 'BOOLEAN NOT NULL'
 }
@@ -30,6 +33,7 @@ _links_schema = {
 
 _initialize_statements = [
     'CREATE INDEX IF NOT EXISTS alias_zoid ON aliases (zoid);',
+    'CREATE INDEX IF NOT EXISTS alias_container_id ON aliases (container_id);',
     'CREATE INDEX IF NOT EXISTS alias_path ON aliases (path);',
     'CREATE INDEX IF NOT EXISTS alias_moved ON aliases (moved);',
     'CREATE INDEX IF NOT EXISTS link_source_id ON links (source_id);',

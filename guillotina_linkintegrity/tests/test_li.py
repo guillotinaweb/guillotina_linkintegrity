@@ -1,5 +1,5 @@
-from guillotina_linkintegrity import utils
 from guillotina.content import create_content_in_container
+from guillotina_linkintegrity import utils
 
 
 async def test_add_alias(guillotina, container_requester):
@@ -10,7 +10,8 @@ async def test_add_alias(guillotina, container_requester):
             foobar = await create_content_in_container(
                 container, 'Item', id_='foobar')
             await txn.commit()  # writes out content
-            await utils.add_alias(foobar, '/foobar2')
+            await utils.add_aliases(
+                foobar, ['/foobar2'], container=container)
 
             aliases = await utils.get_aliases(foobar)
             assert len(aliases) == 1
@@ -25,13 +26,15 @@ async def test_remove_alias(guillotina, container_requester):
             foobar = await create_content_in_container(
                 container, 'Item', id_='foobar')
             await txn.commit()  # writes out content
-            await utils.add_alias(foobar, '/foobar2')
-            await utils.add_alias(foobar, '/foobar3')
+            await utils.add_aliases(
+                foobar, ['/foobar2'], container=container)
+            await utils.add_aliases(
+                foobar, ['/foobar3'], container=container)
 
             aliases = await utils.get_aliases(foobar)
             assert len(aliases) == 2
 
-            await utils.remove_alias(foobar, '/foobar2')
+            await utils.remove_aliases(foobar, ['/foobar2'])
 
             aliases = await utils.get_aliases(foobar)
             assert len(aliases) == 1
@@ -48,7 +51,8 @@ async def test_get_inherited_aliases(guillotina, container_requester):
             item = await create_content_in_container(
                 folder, 'Item', id_='item')
             await txn.commit()  # writes out content
-            await utils.add_alias(folder, '/other')
+            await utils.add_aliases(
+                folder, ['/other'], container=container)
 
             assert len(await utils.get_aliases(folder)) == 1
             assert len(await utils.get_aliases(item)) == 0
@@ -125,7 +129,7 @@ async def test_update_links_from_html(guillotina, container_requester):
             html = f'''<p>
 <a href="@resolveuid/{item1._p_oid}">item1</a>
 </p>'''
-            await utils.update_links_from_html(folder, html) 
+            await utils.update_links_from_html(folder, html)
             assert len(await utils.get_links(folder)) == 1
 
 
@@ -137,8 +141,6 @@ async def test_update_links_from_html_ignore_invalid(
             container = await root.async_get('guillotina')
             folder = await create_content_in_container(
                 container, 'Folder', id_='folder')
-            folder2 = await create_content_in_container(
-                folder, 'Folder', id_='folder')
 
             item1 = await create_content_in_container(
                 folder, 'Item', id_='item1')

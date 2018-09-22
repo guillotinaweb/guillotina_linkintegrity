@@ -1,25 +1,35 @@
 from guillotina import configure
 from guillotina.interfaces import IResource
+from guillotina_linkintegrity import utils
 
 
 @configure.service(method='GET', name='@aliases', context=IResource,
                    permission='guillotina.AccessContent')
 async def get_aliases(context, request):
-    '''
-    Get ones directly on content AND inherited ones
-    '''
     return {
-        'foo': 'bar'
+        'inherited': await utils.get_inherited_aliases(context),
+        'aliases': await utils.get_aliases(context)
     }
 
 
 @configure.service(method='PATCH', name='@aliases', context=IResource,
                    permission='guillotina.ModifyContent')
 async def patch_aliases(context, request):
-    pass
+    data = await request.json()
+    await utils.add_aliases(
+        context, data['paths'], container=request.container, moved=False)
+    return {}
 
 
-@configure.service(method='PUT', name='@aliases', context=IResource,
+@configure.service(method='DELETE', name='@aliases', context=IResource,
                    permission='guillotina.ModifyContent')
-async def put_aliases(context, request):
-    pass
+async def delete_aliases(context, request):
+    data = await request.json()
+    await utils.remove_aliases(context, data['paths'])
+    return {}
+
+
+@configure.service(method='GET', name='@links', context=IResource,
+                   permission='guillotina.ModifyContent')
+async def get_links(context, request):
+    return await utils.get_links(context)

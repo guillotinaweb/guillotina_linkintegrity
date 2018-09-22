@@ -63,8 +63,8 @@ How about aliases:
 import guillotina_linkintegrity as li
 
 await li.get_aliases(ob)
-await li.add_alias(ob, '/foo/bar')
-await li.remove_alias(ob, '/foo/bar')
+await li.add_aliases(ob, ['/foo/bar'])
+await li.remove_aliases(ob, ['/foo/bar'])
 
 # what about aliases from parents that might affect it?
 await li.get_inherited_aliases(ob)
