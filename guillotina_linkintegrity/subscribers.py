@@ -1,5 +1,4 @@
 import os
-from functools import partial
 
 from guillotina import configure
 from guillotina.interfaces import (IObjectMovedEvent, IResource,

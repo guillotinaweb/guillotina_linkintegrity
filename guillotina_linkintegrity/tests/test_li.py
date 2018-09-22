@@ -122,7 +122,7 @@ async def test_update_links_from_html(guillotina, container_requester):
 <a href="@resolveuid/{item3._p_oid}">item1</a>
 <img src="@resolveuid/{item3._p_oid}" />
 </p>'''
-            await utils.update_links_from_html(folder, html) 
+            await utils.update_links_from_html(folder, html)
 
             assert len(await utils.get_links(folder)) == 3
 

@@ -28,7 +28,7 @@ setup(
     ],
     extras_require={
         'test': [
-            'pytest'
+            'guillotina[test]'
         ]
     },
     classifiers=[
