@@ -8,6 +8,15 @@ env:
   - DATABASE=postgresql
   - DATABASE=cockroachdb
 
+services:
+  - postgresql
+  - docker
+# make sure we're on the latest version of postgresql
+addons:
+  postgresql: "9.6"
+before_script:
+  - psql -c 'create database guillotina;' -U postgres
+
 install:
   - pip install -e .[test]
   - pip install flake8 codecov pytest-cov
