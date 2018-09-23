@@ -7,6 +7,18 @@ try:
 except IOError:
     README = None
 
+test_requirements = [
+    'pytest<=3.1.0',
+    'docker',
+    'backoff',
+    'psycopg2',
+    'pytest-asyncio>=0.8.0',
+    'pytest-cov',
+    'coverage>=4.0.3',
+    'pytest-docker-fixtures'
+]
+
+
 setup(
     name='guillotina_linkintegrity',
     version="1.0.0",
@@ -23,13 +35,9 @@ setup(
     url='https://github.com/guillotinaweb/guillotina_linkintegrity',
     packages=find_packages(exclude=['demo']),
     include_package_data=True,
-    tests_require=[
-        'pytest',
-    ],
+    tests_require=test_requirements,
     extras_require={
-        'test': [
-            'guillotina[test]'
-        ]
+        'test': test_requirements
     },
     classifiers=[
         'License :: OSI Approved :: BSD License',
