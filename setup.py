@@ -26,7 +26,7 @@ setup(
     long_description=README,
     long_description_content_type='text/markdown',
     install_requires=[
-        'guillotina',
+        'guillotina>=4.2.0',
         'pypika',
         'lxml'
     ],
