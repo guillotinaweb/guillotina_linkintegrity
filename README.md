@@ -1,5 +1,12 @@
 # Guillotina link integrity
 
+[![Travis CI](https://travis-ci.org/guillotinaweb/guillotina_linkintegrity.svg?branch=master)](https://travis-ci.org/guillotinaweb/guillotina_linkintegrity)
+[![Test Coverage](https://codecov.io/gh/guillotinaweb/guillotina_linkintegrity/branch/master/graph/badge.svg)](https://codecov.io/gh/guillotinaweb/guillotina_linkintegrity/branch/master)
+[![Python Versions](https://img.shields.io/pypi/pyversions/guillotina_linkintegrity.svg)](https://pypi.python.org/pypi/guillotina_linkintegrity/)
+[![PyPi](https://img.shields.io/pypi/v/guillotina_linkintegrity.svg)](https://pypi.python.org/pypi/guillotina_linkintegrity)
+[![License](https://img.shields.io/pypi/l/guillotina_linkintegrity.svg)](https://pypi.python.org/pypi/guillotina_linkintegrity/)
+
+
 The package aims to provide link integrity support for Guillotina.
 
 Features:
