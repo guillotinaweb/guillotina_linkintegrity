@@ -5,7 +5,11 @@ from setuptools import setup
 try:
     README = open('README.md').read()
 except IOError:
-    README = None
+    README = ''
+try:
+    CHANGELOG = open('CHANGELOG.md').read()
+except IOError:
+    CHANGELOG = ''
 
 test_requirements = [
     'pytest<=3.1.0',
@@ -23,7 +27,7 @@ setup(
     name='guillotina_linkintegrity',
     version="1.0.0",
     description='Link integrity support for guillotina',
-    long_description=README,
+    long_description=README + '\n\n' + CHANGELOG,
     long_description_content_type='text/markdown',
     install_requires=[
         'guillotina>=4.2.0',
