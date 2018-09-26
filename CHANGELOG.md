@@ -1,4 +1,4 @@
-## 1.0.2 (unreleased)
+1.0.2 (2018-09-26)
 
 - Add `@links-to` endpoint and utils.get_links_to
   [vangheem]
