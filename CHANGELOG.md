@@ -1,10 +1,9 @@
-1.0.2 (unreleased)
-------------------
+## 1.0.2 (unreleased)
 
 - Nothing changed yet.
 
 
-1.0.1 (2018-09-26)
+## 1.0.1 (2018-09-26)
 
 - Fix imports to match docs
   [vangheem]
