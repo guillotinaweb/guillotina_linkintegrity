@@ -25,7 +25,7 @@ test_requirements = [
 
 setup(
     name='guillotina_linkintegrity',
-    version='1.0.3',
+    version='1.0.4.dev0',
     description='Link integrity support for guillotina',
     long_description=README + '\n\n' + CHANGELOG,
     long_description_content_type='text/markdown',
