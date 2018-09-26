@@ -31,6 +31,8 @@ setup(
     long_description_content_type='text/markdown',
     install_requires=[
         'guillotina>=4.2.0',
+        'guillotina_rediscache',
+        'lru-dict',
         'pypika',
         'lxml'
     ],

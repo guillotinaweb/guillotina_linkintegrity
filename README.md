@@ -20,6 +20,7 @@ Features:
 
 - Python >= 3.6
 - Guillotina
+- Redis(guillotina_rediscache configured)
 - PG/Cockroachdb
 
 

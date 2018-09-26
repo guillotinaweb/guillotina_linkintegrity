@@ -7,6 +7,8 @@ from guillotina.transactions import get_transaction
 from guillotina.utils import get_content_path
 from guillotina.utils import get_current_request
 from guillotina.utils import get_object_url
+from guillotina_linkintegrity.cache import cached_wrapper
+from guillotina_linkintegrity.cache import invalidate_wrapper
 from lxml import html
 from pypika import PostgreSQLQuery as Query
 from pypika import Table
@@ -18,7 +20,7 @@ links_table = Table('links')
 objects_table = Table('objects')
 
 
-def _get_storage():
+def get_storage():
     txn = get_transaction()
     storage = txn.manager._storage
     if not IPostgresStorage.providedBy(storage):
@@ -28,8 +30,9 @@ def _get_storage():
     return storage
 
 
-async def get_aliases(ob) -> []:
-    storage = _get_storage()
+@cached_wrapper('aliases')
+async def get_aliases(ob, storage=None) -> list:
+    storage = storage or get_storage()
     if storage is None:
         return
     query = Query.from_(aliases_table).select(
@@ -48,8 +51,10 @@ async def get_aliases(ob) -> []:
     return data
 
 
-async def add_aliases(ob, paths: list, container=None, moved=True):
-    storage = _get_storage()
+@invalidate_wrapper(['aliases'])
+async def add_aliases(ob, paths: list, container=None, moved=True,
+                      storage=None):
+    storage = storage or get_storage()
     if storage is None:
         return
 
@@ -71,8 +76,9 @@ async def add_aliases(ob, paths: list, container=None, moved=True):
         await conn.execute(str(query))
 
 
-async def remove_aliases(ob, paths: list):
-    storage = _get_storage()
+@invalidate_wrapper(['aliases'])
+async def remove_aliases(ob, paths: list, storage=None):
+    storage = storage or get_storage()
     if storage is None:
         return
 
@@ -86,47 +92,32 @@ async def remove_aliases(ob, paths: list):
 
 
 async def get_inherited_aliases(ob) -> list:
-    storage = _get_storage()
+    storage = get_storage()
     if storage is None:
         return []
 
-    ids_to_lookup = {}
+    ob_path = get_content_path(ob)
+    data = []
     context = ob.__parent__
     while context is not None and not IContainer.providedBy(context):
-        ids_to_lookup[context._p_oid] = context
+        context_path = get_content_path(context)
+        for alias in await get_aliases(context):
+            if not alias['moved']:
+                continue
+            path = alias['path']
+            current_sub_path = ob_path[len(context_path):]
+            path = os.path.join(path, current_sub_path.strip('/'))
+            alias['context_path'] = context_path
+            alias['path'] = path
+            data.append(alias)
         context = context.__parent__
 
-    if len(ids_to_lookup) == 0:
-        return []
-
-    query = Query.from_(aliases_table).select(
-        aliases_table.zoid, aliases_table.path, aliases_table.moved
-    ).where(
-        aliases_table.zoid.isin(list(ids_to_lookup.keys())) &
-        aliases_table.moved == True  # noqa
-    )
-
-    async with storage._pool.acquire() as conn:
-        results = await conn.fetch(str(query))
-
-    data = []
-    ob_path = get_content_path(ob)
-    for result in results:
-        path = result['path']
-        context = ids_to_lookup[result['zoid']]
-        context_path = get_content_path(context)
-        current_sub_path = ob_path[len(context_path):]
-        path = os.path.join(path, current_sub_path.strip('/'))
-        data.append({
-            'context_path': context_path,
-            'path': path,
-            'moved': result['moved']
-        })
     return data
 
 
+@cached_wrapper('links')
 async def get_links(ob) -> list:
-    storage = _get_storage()
+    storage = get_storage()
     if storage is None:
         return []
 
@@ -143,8 +134,9 @@ async def get_links(ob) -> list:
     return data
 
 
+@cached_wrapper('links-to')
 async def get_links_to(ob) -> list:
-    storage = _get_storage()
+    storage = get_storage()
     if storage is None:
         return []
 
@@ -161,8 +153,9 @@ async def get_links_to(ob) -> list:
     return data
 
 
+@invalidate_wrapper(['links'], ['links-to'])
 async def add_links(ob, links):
-    storage = _get_storage()
+    storage = get_storage()
     if storage is None:
         return
 
@@ -173,8 +166,9 @@ async def add_links(ob, links):
         await conn.execute(str(query))
 
 
+@invalidate_wrapper(['links'], ['links-to'])
 async def remove_links(ob, links):
-    storage = _get_storage()
+    storage = get_storage()
     if storage is None:
         return
 
@@ -186,8 +180,9 @@ async def remove_links(ob, links):
         await conn.execute(str(query.delete()))
 
 
+@invalidate_wrapper(['links'], ['links-to'])
 async def update_links_from_html(ob, *contents):
-    storage = _get_storage()
+    storage = get_storage()
     if storage is None:
         return
 
@@ -227,6 +222,24 @@ async def update_links_from_html(ob, *contents):
             await conn.execute(str(query))
 
 
+@cached_wrapper('id', ob_key=False)
+async def _get_id(zoid):
+    storage = get_storage()
+    if storage is None:
+        return
+    async with storage._pool.acquire() as conn:
+        result = await conn.fetch(str(
+            Query.from_(objects_table).select(
+                'id', 'parent_id').where(
+                    objects_table.zoid == zoid)))
+    if len(result) > 0:
+        return {
+            'id': result[0]['id'],
+            'parent': result[0]['parent_id']
+        }
+    # could not find, this should not happen
+
+
 async def translate_links(content, container=None) -> str:
     '''
     optimized url builder here so we don't pull
@@ -235,9 +248,6 @@ async def translate_links(content, container=None) -> str:
     Would be great to move this into an implementation
     that worked with current cache/invalidation strategies
     '''
-    storage = _get_storage()
-    if storage is None:
-        return
 
     req = None
     if container is None:
@@ -247,39 +257,32 @@ async def translate_links(content, container=None) -> str:
     dom = html.fromstring(content)
     contexts = {}
 
-    async with storage._pool.acquire() as conn:
-        for node in dom.xpath('//a') + dom.xpath('//img'):
-            url = node.get('href', node.get('src', ''))
-            if 'resolveuid/' not in url:
-                continue
-            path = []
-            _, _, current_uid = url.partition('resolveuid/')
-            current_uid = current_uid.split('/')[0].split('?')[0]
+    for node in dom.xpath('//a') + dom.xpath('//img'):
+        url = node.get('href', node.get('src', ''))
+        if 'resolveuid/' not in url:
+            continue
+        path = []
+        _, _, current_uid = url.partition('resolveuid/')
+        current_uid = current_uid.split('/')[0].split('?')[0]
 
-            error = False
-            while current_uid != container._p_oid:
-                if current_uid not in contexts:
-                    # fetch from db
-                    result = await conn.fetch(str(
-                        Query.from_(objects_table).select(
-                            'id', 'parent_id').where(
-                            objects_table.zoid == current_uid)))
-                    if len(result) > 0:
-                        contexts[current_uid] = {
-                            'id': result[0]['id'],
-                            'parent': result[0]['parent_id']
-                        }
-                    else:
-                        # could not find, this should not happen
-                        error = True
-                        break
-                path = [contexts[current_uid]['id']] + path
-                current_uid = contexts[current_uid]['parent']
+        error = False
+        while current_uid != container._p_oid:
+            if current_uid not in contexts:
+                # fetch from db
+                result = await _get_id(current_uid)
+                if result is not None:
+                    contexts[current_uid] = result
+                else:
+                    # could not find, this should not happen
+                    error = True
+                    break
+            path = [contexts[current_uid]['id']] + path
+            current_uid = contexts[current_uid]['parent']
 
-            if error:
-                continue
-            url = os.path.join(container_url, '/'.join(path))
-            attr = node.tag.lower() == 'a' and 'href' or 'src'
-            node.attrib[attr] = url
+        if error:
+            continue
+        url = os.path.join(container_url, '/'.join(path))
+        attr = node.tag.lower() == 'a' and 'href' or 'src'
+        node.attrib[attr] = url
 
     return html.tostring(dom).decode('utf-8')

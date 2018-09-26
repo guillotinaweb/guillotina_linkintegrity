@@ -1,25 +1,40 @@
 import os
 
 from guillotina import configure
-from guillotina.interfaces import (IObjectMovedEvent, IResource,
-                                   ITraversalMissEvent)
+from guillotina.interfaces import IObjectMovedEvent
+from guillotina.interfaces import IResource
+from guillotina.interfaces import ITraversalMissEvent
 from guillotina.response import HTTPMovedPermanently
 from guillotina.transactions import get_transaction
-from guillotina.utils import (execute, get_content_path, get_object_by_oid,
-                              get_object_url)
+from guillotina.utils import execute
+from guillotina.utils import get_content_path
+from guillotina.utils import get_current_request
+from guillotina.utils import get_object_by_oid
+from guillotina.utils import get_object_url
 from guillotina_linkintegrity import utils
+from guillotina_linkintegrity.cache import get_cache
 from pypika import PostgreSQLQuery as Query
 from pypika import Table
+
 
 aliases_table = Table('aliases')
 
 
 @configure.subscriber(for_=(IResource, IObjectMovedEvent))
 async def object_moved(ob, event):
+    req = get_current_request()
     parent_path = get_content_path(event.old_parent)
     old_path = os.path.join(parent_path, event.old_name)
-    execute.before_commit(
-        utils.add_aliases, ob, [old_path], moved=True)
+    storage = utils.get_storage()
+    execute.after_request(
+        utils.add_aliases, ob, [old_path], moved=True,
+        container=req.container, storage=storage)
+    cache = get_cache()
+    execute.after_request(
+        cache.publish_invalidation,
+        '{}-id'.format(ob._p_oid),
+        '{}-links'.format(ob._p_oid),
+        '{}-links-to'.format(ob._p_oid))
 
 
 @configure.subscriber(for_=ITraversalMissEvent)
