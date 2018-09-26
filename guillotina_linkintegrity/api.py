@@ -33,3 +33,9 @@ async def delete_aliases(context, request):
                    permission='guillotina.ModifyContent')
 async def get_links(context, request):
     return await utils.get_links(context)
+
+
+@configure.service(method='GET', name='@links-to', context=IResource,
+                   permission='guillotina.ModifyContent')
+async def get_links_to(context, request):
+    return await utils.get_links_to(context)

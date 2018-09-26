@@ -1,7 +1,10 @@
 ## 1.0.2 (unreleased)
 
-- Nothing changed yet.
+- Add `@links-to` endpoint and utils.get_links_to
+  [vangheem]
 
+- Do not fail when using dummy storage
+  [vangheem]
 
 ## 1.0.1 (2018-09-26)
 

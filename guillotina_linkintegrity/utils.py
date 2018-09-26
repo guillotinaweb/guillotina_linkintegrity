@@ -1,26 +1,42 @@
+import logging
 import os
 
+from guillotina.db.interfaces import IPostgresStorage
 from guillotina.interfaces import IContainer
 from guillotina.transactions import get_transaction
-from guillotina.utils import (get_content_path, get_current_request,
-                              get_object_url)
+from guillotina.utils import get_content_path
+from guillotina.utils import get_current_request
+from guillotina.utils import get_object_url
 from lxml import html
 from pypika import PostgreSQLQuery as Query
 from pypika import Table
 
+
+logger = logging.getLogger(__name__)
 aliases_table = Table('aliases')
 links_table = Table('links')
 objects_table = Table('objects')
 
 
-async def get_aliases(ob):
+def _get_storage():
     txn = get_transaction()
+    storage = txn.manager._storage
+    if not IPostgresStorage.providedBy(storage):
+        # would already get big warning log about this
+        logger.debug('Storage does not support link integrity')
+        return None
+    return storage
+
+
+async def get_aliases(ob) -> []:
+    storage = _get_storage()
+    if storage is None:
+        return
     query = Query.from_(aliases_table).select(
         aliases_table.path, aliases_table.moved
     ).where(
         aliases_table.zoid == ob._p_oid
     )
-    storage = txn.manager._storage
     async with storage._pool.acquire() as conn:
         results = await conn.fetch(str(query))
     data = []
@@ -33,10 +49,13 @@ async def get_aliases(ob):
 
 
 async def add_aliases(ob, paths: list, container=None, moved=True):
+    storage = _get_storage()
+    if storage is None:
+        return
+
     if container is None:
         req = get_current_request()
         container = req.container
-    txn = get_transaction()
     query = Query.into(aliases_table).columns(
         'zoid', 'container_id', 'path', 'moved')
     for path in paths:
@@ -48,24 +67,29 @@ async def add_aliases(ob, paths: list, container=None, moved=True):
             moved
         )
 
-    storage = txn.manager._storage
     async with storage._pool.acquire() as conn:
         await conn.execute(str(query))
 
 
 async def remove_aliases(ob, paths: list):
-    txn = get_transaction()
+    storage = _get_storage()
+    if storage is None:
+        return
+
     for path in paths:
         query = Query.from_(aliases_table).where(
             (aliases_table.zoid == ob._p_oid) &
             (aliases_table.path == path)
         )
-        storage = txn.manager._storage
         async with storage._pool.acquire() as conn:
             await conn.execute(str(query.delete()))
 
 
-async def get_inherited_aliases(ob):
+async def get_inherited_aliases(ob) -> list:
+    storage = _get_storage()
+    if storage is None:
+        return []
+
     ids_to_lookup = {}
     context = ob.__parent__
     while context is not None and not IContainer.providedBy(context):
@@ -82,8 +106,6 @@ async def get_inherited_aliases(ob):
         aliases_table.moved == True  # noqa
     )
 
-    txn = get_transaction()
-    storage = txn.manager._storage
     async with storage._pool.acquire() as conn:
         results = await conn.fetch(str(query))
 
@@ -103,14 +125,16 @@ async def get_inherited_aliases(ob):
     return data
 
 
-async def get_links(ob):
-    txn = get_transaction()
+async def get_links(ob) -> list:
+    storage = _get_storage()
+    if storage is None:
+        return []
+
     query = Query.from_(links_table).select(
         links_table.target_id
     ).where(
         links_table.source_id == ob._p_oid
     )
-    storage = txn.manager._storage
     async with storage._pool.acquire() as conn:
         results = await conn.fetch(str(query))
     data = []
@@ -119,28 +143,54 @@ async def get_links(ob):
     return data
 
 
+async def get_links_to(ob) -> list:
+    storage = _get_storage()
+    if storage is None:
+        return []
+
+    query = Query.from_(links_table).select(
+        links_table.source_id
+    ).where(
+        links_table.target_id == ob._p_oid
+    )
+    async with storage._pool.acquire() as conn:
+        results = await conn.fetch(str(query))
+    data = []
+    for result in results:
+        data.append(result['source_id'])
+    return data
+
+
 async def add_links(ob, links):
-    txn = get_transaction()
+    storage = _get_storage()
+    if storage is None:
+        return
+
     query = Query.into(links_table).columns('source_id', 'target_id')
     for link in links:
         query = query.insert(str(ob._p_oid), str(link._p_oid))
-    storage = txn.manager._storage
     async with storage._pool.acquire() as conn:
         await conn.execute(str(query))
 
 
 async def remove_links(ob, links):
-    txn = get_transaction()
+    storage = _get_storage()
+    if storage is None:
+        return
+
     query = Query.from_(links_table).where(
         (links_table.source_id == ob._p_oid) &
         links_table.target_id.isin([l._p_oid for l in links])
     )
-    storage = txn.manager._storage
     async with storage._pool.acquire() as conn:
         await conn.execute(str(query.delete()))
 
 
 async def update_links_from_html(ob, *contents):
+    storage = _get_storage()
+    if storage is None:
+        return
+
     links = set()
     for content in contents:
         dom = html.fromstring(content)
@@ -152,8 +202,6 @@ async def update_links_from_html(ob, *contents):
             uid = uid.split('/')[0].split('?')[0]
             links.add(uid)
 
-    txn = get_transaction()
-    storage = txn.manager._storage
     async with storage._pool.acquire() as conn:
         # make sure to filter out bad links
         existing_oids = set()
@@ -179,7 +227,7 @@ async def update_links_from_html(ob, *contents):
             await conn.execute(str(query))
 
 
-async def translate_links(content, container=None):
+async def translate_links(content, container=None) -> str:
     '''
     optimized url builder here so we don't pull
     full objects from database however, we lose caching.
@@ -187,6 +235,10 @@ async def translate_links(content, container=None):
     Would be great to move this into an implementation
     that worked with current cache/invalidation strategies
     '''
+    storage = _get_storage()
+    if storage is None:
+        return
+
     req = None
     if container is None:
         req = get_current_request()
@@ -195,8 +247,6 @@ async def translate_links(content, container=None):
     dom = html.fromstring(content)
     contexts = {}
 
-    txn = get_transaction()
-    storage = txn.manager._storage
     async with storage._pool.acquire() as conn:
         for node in dom.xpath('//a') + dom.xpath('//img'):
             url = node.get('href', node.get('src', ''))

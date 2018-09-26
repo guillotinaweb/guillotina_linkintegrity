@@ -59,6 +59,7 @@ Working with linked content:
 import guillotina_linkintegrity as li
 
 await li.get_links(ob)
+await li.get_links_to(ob)
 await li.add_links(ob, [ob2, ob3])
 await li.remove_links(ob, [ob2, ob3])
 await li.update_links_from_html(ob, content)
