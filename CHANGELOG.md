@@ -1,4 +1,4 @@
-## 1.0.4 (unreleased)
+1.0.4 (2018-09-27)
 
 - Fix dummy storage 404 error
 
