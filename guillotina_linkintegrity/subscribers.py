@@ -43,20 +43,23 @@ async def check_content_moved(event):
     if getattr(request, 'container', None) is None:
         return
 
+    storage = utils.get_storage()
+    if storage is None:
+        return
+
     tail, _, view = '/'.join(event.tail).partition('/@')
     if view:
         view = '@' + view
     path = os.path.join(
         get_content_path(request.resource), tail)
 
-    txn = get_transaction()
     query = Query.from_(aliases_table).select(
         aliases_table.zoid
     ).where(
         (aliases_table.path == path) |
         (aliases_table.path == path + '/' + view)
     )
-    storage = txn.manager._storage
+
     async with storage._pool.acquire() as conn:
         results = await conn.fetch(str(query))
 

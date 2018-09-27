@@ -1,10 +1,9 @@
-1.0.4 (unreleased)
-------------------
+## 1.0.4 (unreleased)
 
-- Nothing changed yet.
+- Fix dummy storage 404 error
 
 
-1.0.3 (2018-09-26)
+## 1.0.3 (2018-09-26)
 
 - Implement caching
   [vangheem]
