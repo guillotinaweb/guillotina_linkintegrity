@@ -5,7 +5,6 @@ from guillotina.interfaces import IObjectMovedEvent
 from guillotina.interfaces import IResource
 from guillotina.interfaces import ITraversalMissEvent
 from guillotina.response import HTTPMovedPermanently
-from guillotina.transactions import get_transaction
 from guillotina.utils import execute
 from guillotina.utils import get_content_path
 from guillotina.utils import get_current_request
