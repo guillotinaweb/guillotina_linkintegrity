@@ -197,6 +197,14 @@ async def update_links_from_html(ob, *contents):
             uid = uid.split('/')[0].split('?')[0]
             links.add(uid)
 
+    if len(links) == 0:
+        # delete existing if there are any
+        async with storage._pool.acquire() as conn:
+            await conn.execute(str(Query.from_(links_table).where(
+                links_table.source_id == ob._p_oid
+            ).delete()))
+        return
+
     async with storage._pool.acquire() as conn:
         # make sure to filter out bad links
         existing_oids = set()

@@ -38,7 +38,7 @@ class LinkIntegrityCache:
                 ch = res[0]
                 while (await ch.wait_message()):
                     keys = json.loads(await ch.get())
-                    await self.invalidate(*keys)
+                    self.invalidate(*keys)
             except (asyncio.CancelledError, RuntimeError):
                 # task cancelled, let it die
                 return

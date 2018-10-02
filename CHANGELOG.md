@@ -1,13 +1,11 @@
-1.0.5 (unreleased)
-------------------
+## 1.0.5 (unreleased)
 
-- Nothing changed yet.
+- Fix error on link integrity
+  [vangheem]
 
-
-1.0.4 (2018-09-27)
+## 1.0.4 (2018-09-27)
 
 - Fix dummy storage 404 error
-
 
 ## 1.0.3 (2018-09-26)
 
