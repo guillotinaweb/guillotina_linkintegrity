@@ -1,4 +1,4 @@
-## 1.0.5 (unreleased)
+1.0.5 (2018-10-02)
 
 - Fix error on link integrity
   [vangheem]
