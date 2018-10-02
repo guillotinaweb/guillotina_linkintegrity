@@ -1,3 +1,9 @@
+1.0.6 (unreleased)
+------------------
+
+- Nothing changed yet.
+
+
 1.0.5 (2018-10-02)
 
 - Fix error on link integrity
