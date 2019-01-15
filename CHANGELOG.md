@@ -1,7 +1,8 @@
 1.0.6 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Safe queries
+  [vangheem]
 
 
 1.0.5 (2018-10-02)

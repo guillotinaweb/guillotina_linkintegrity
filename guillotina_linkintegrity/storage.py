@@ -60,7 +60,7 @@ async def initialize(event):
     for statement in statements:
         try:
             async with storage._lock:
-                await storage._read_conn.execute(statement)
+                await storage.read_conn.execute(statement)
         except asyncpg.exceptions.UniqueViolationError:
             # this is okay on creation, means 2 getting created at same time
             pass
