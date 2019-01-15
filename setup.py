@@ -12,12 +12,12 @@ except IOError:
     CHANGELOG = ''
 
 test_requirements = [
-    'pytest<=3.1.0',
+    'pytest>=4.1.1',
     'docker',
     'backoff',
-    'psycopg2',
+    'psycopg2-binary',
     'pytest-asyncio>=0.8.0',
-    'pytest-cov',
+    'pytest-cov>=2.6.1',
     'coverage>=4.0.3',
     'pytest-docker-fixtures'
 ]
@@ -30,7 +30,7 @@ setup(
     long_description=README + '\n\n' + CHANGELOG,
     long_description_content_type='text/markdown',
     install_requires=[
-        'guillotina>=4.2.0',
+        'guillotina>=4.4.5',
         'guillotina_rediscache',
         'lru-dict',
         'pypika',

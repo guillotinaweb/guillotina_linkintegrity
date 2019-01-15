@@ -59,7 +59,7 @@ async def check_content_moved(event):
         (aliases_table.path == path + '/' + view)
     )
 
-    async with storage._pool.acquire() as conn:
+    async with storage.pool.acquire() as conn:
         results = await conn.fetch(str(query))
 
     if len(results) > 0:
