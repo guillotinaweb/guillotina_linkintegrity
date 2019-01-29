@@ -30,7 +30,7 @@ setup(
     long_description=README + '\n\n' + CHANGELOG,
     long_description_content_type='text/markdown',
     install_requires=[
-        'guillotina>=4.4.5',
+        'guillotina>=4.4.10',
         'guillotina_rediscache',
         'lru-dict',
         'pypika',
