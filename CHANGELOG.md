@@ -1,4 +1,4 @@
-1.0.7 (unreleased)
+1.0.7 (2019-01-29)
 ------------------
 
 - Fix use of storage lock
