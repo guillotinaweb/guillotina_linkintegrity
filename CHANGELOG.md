@@ -1,7 +1,7 @@
 1.0.8 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Restrict compat with guillotina
 
 
 1.0.7 (2019-01-29)
