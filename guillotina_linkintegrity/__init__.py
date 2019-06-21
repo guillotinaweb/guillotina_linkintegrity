@@ -14,9 +14,14 @@ from guillotina_linkintegrity.utils import add_aliases  # noqa; noqa
 
 
 app_settings = {
-    'linkintegrity': {
-        'cache_size': 1500,
-        'updates_channel': 'liinvalidate'
+    'applications': [
+        'guillotina.contrib.cache',
+        'guillotina.contrib.pubsub',
+        'guillotina.contrib.redis',
+    ],
+    'cache': {
+        'updates_channel': 'guillotina',
+        'driver': 'guillotina.contrib.redis'
     }
 }
 

@@ -10,8 +10,9 @@ from guillotina.utils import find_container
 from guillotina.utils import get_content_path
 from guillotina.utils import get_object_by_oid
 from guillotina.utils import get_object_url
+from guillotina.component import get_utility
+from guillotina.interfaces import ICacheUtility
 from guillotina_linkintegrity import utils
-from guillotina_linkintegrity.cache import get_cache
 from pypika import PostgreSQLQuery as Query
 from pypika import Table
 
@@ -28,12 +29,14 @@ async def object_moved(ob, event):
     execute.after_request(
         utils.add_aliases, ob, [old_path], moved=True,
         container=container, storage=storage)
-    cache = get_cache()
+    cache = get_utility(ICacheUtility)
     execute.after_request(
-        cache.publish_invalidation,
-        '{}-id'.format(ob.__uuid__),
-        '{}-links'.format(ob.__uuid__),
-        '{}-links-to'.format(ob.__uuid__))
+        cache.send_invalidation,
+        None,
+        ['{}-id'.format(ob.__uuid__),
+         '{}-links'.format(ob.__uuid__),
+         '{}-links-to'.format(ob.__uuid__)],
+        {})
 
 
 @configure.subscriber(for_=ITraversalMissEvent)
