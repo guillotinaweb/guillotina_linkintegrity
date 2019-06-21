@@ -117,17 +117,17 @@ async def test_update_links_from_html(guillotina, container_requester):
             await txn.commit()  # writes out content
 
             html = f'''<p>
-<a href="@resolveuid/{item1._p_oid}">item1</a>
-<a href="@resolveuid/{item2._p_oid}">item1</a>
-<a href="@resolveuid/{item3._p_oid}">item1</a>
-<img src="@resolveuid/{item3._p_oid}" />
+<a href="@resolveuid/{item1.__uuid__}">item1</a>
+<a href="@resolveuid/{item2.__uuid__}">item1</a>
+<a href="@resolveuid/{item3.__uuid__}">item1</a>
+<img src="@resolveuid/{item3.__uuid__}" />
 </p>'''
             await utils.update_links_from_html(folder, html)
 
             assert len(await utils.get_links(folder)) == 3
 
             html = f'''<p>
-<a href="@resolveuid/{item1._p_oid}">item1</a>
+<a href="@resolveuid/{item1.__uuid__}">item1</a>
 </p>'''
             await utils.update_links_from_html(folder, html)
             assert len(await utils.get_links(folder)) == 1
@@ -147,7 +147,7 @@ async def test_update_links_from_html_ignore_invalid(
             await txn.commit()  # writes out content
 
             html = f'''<p>
-<a href="@resolveuid/{item1._p_oid}">item1</a>
+<a href="@resolveuid/{item1.__uuid__}">item1</a>
 <a href="@resolveuid/foobar-expired">item1</a>
 </p>'''
             await utils.update_links_from_html(folder, html)
@@ -171,8 +171,8 @@ async def test_translate_html(guillotina, container_requester):
             await txn.commit()  # writes out content
 
             html = f'''<p>
-<a href="@resolveuid/{folder4._p_oid}">item1</a>
-<a href="@resolveuid/{folder3._p_oid}">item1</a>
+<a href="@resolveuid/{folder4.__uuid__}">item1</a>
+<a href="@resolveuid/{folder3.__uuid__}">item1</a>
 
 </p>'''
             result = await utils.translate_links(html, container)

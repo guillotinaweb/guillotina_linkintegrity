@@ -5,8 +5,8 @@ import string
 from guillotina.db.interfaces import IPostgresStorage
 from guillotina.interfaces import IContainer
 from guillotina.transactions import get_transaction
+from guillotina.utils import find_container
 from guillotina.utils import get_content_path
-from guillotina.utils import get_current_request
 from guillotina.utils import get_object_url
 from guillotina_linkintegrity.cache import cached_wrapper
 from guillotina_linkintegrity.cache import invalidate_wrapper
@@ -44,7 +44,7 @@ async def get_aliases(ob, storage=None) -> list:
     query = Query.from_(aliases_table).select(
         aliases_table.path, aliases_table.moved
     ).where(
-        aliases_table.zoid == _safe_uid(ob._p_oid)
+        aliases_table.zoid == _safe_uid(ob.__uuid__)
     )
     async with storage.pool.acquire() as conn:
         results = await conn.fetch(str(query))
@@ -68,8 +68,7 @@ async def add_aliases(ob, paths: list, container=None, moved=True,
         return
 
     if container is None:
-        req = get_current_request()
-        container = req.container
+        container = find_container(ob)
     query = Query.into(aliases_table).columns(
         'zoid', 'container_id', 'path', 'moved')
     values = []
@@ -79,8 +78,8 @@ async def add_aliases(ob, paths: list, container=None, moved=True,
         path = '/' + path.strip('/')
         values.append(path)
         query = query.insert(
-            ob._p_oid,
-            container._p_oid,
+            ob.__uuid__,
+            container.__uuid__,
             f'${i + 1}',
             moved,
         )
@@ -100,7 +99,7 @@ async def remove_aliases(ob, paths: list, storage=None):
 
     for path in paths:
         query = Query.from_(aliases_table).where(
-            (aliases_table.zoid == _safe_uid(ob._p_oid)) &
+            (aliases_table.zoid == _safe_uid(ob.__uuid__)) &
             (aliases_table.path == '$1')
         )
         async with storage.pool.acquire() as conn:
@@ -142,7 +141,7 @@ async def get_links(ob) -> list:
     query = Query.from_(links_table).select(
         links_table.target_id
     ).where(
-        links_table.source_id == _safe_uid(ob._p_oid)
+        links_table.source_id == _safe_uid(ob.__uuid__)
     )
     async with storage.pool.acquire() as conn:
         results = await conn.fetch(str(query))
@@ -161,7 +160,7 @@ async def get_links_to(ob) -> list:
     query = Query.from_(links_table).select(
         links_table.source_id
     ).where(
-        links_table.target_id == _safe_uid(ob._p_oid)
+        links_table.target_id == _safe_uid(ob.__uuid__)
     )
     async with storage.pool.acquire() as conn:
         results = await conn.fetch(str(query))
@@ -180,7 +179,7 @@ async def add_links(ob, links):
     query = Query.into(links_table).columns('source_id', 'target_id')
     for link in links:
         query = query.insert(
-            _safe_uid(str(ob._p_oid)), _safe_uid(str(link._p_oid)))
+            _safe_uid(str(ob.__uuid__)), _safe_uid(str(link.__uuid__)))
     async with storage.pool.acquire() as conn:
         await conn.execute(str(query))
 
@@ -192,8 +191,8 @@ async def remove_links(ob, links):
         return
 
     query = Query.from_(links_table).where(
-        (links_table.source_id == _safe_uid(ob._p_oid)) &
-        links_table.target_id.isin([_safe_uid(l._p_oid) for l in links])
+        (links_table.source_id == _safe_uid(ob.__uuid__)) &
+        links_table.target_id.isin([_safe_uid(l.__uuid__) for l in links])
     )
     async with storage.pool.acquire() as conn:
         await conn.execute(str(query.delete()))
@@ -220,7 +219,7 @@ async def update_links_from_html(ob, *contents):
         # delete existing if there are any
         async with storage.pool.acquire() as conn:
             await conn.execute(str(Query.from_(links_table).where(
-                links_table.source_id == _safe_uid(ob._p_oid)
+                links_table.source_id == _safe_uid(ob.__uuid__)
             ).delete()))
         return
 
@@ -237,7 +236,7 @@ async def update_links_from_html(ob, *contents):
 
         # first delete all existing ones
         await conn.execute(str(Query.from_(links_table).where(
-            links_table.source_id == ob._p_oid
+            links_table.source_id == _safe_uid(ob.__uuid__)
         ).delete()))
 
         # then, readd
@@ -246,7 +245,7 @@ async def update_links_from_html(ob, *contents):
             query = Query.into(links_table).columns('source_id', 'target_id')
             for link in links:
                 query = query.insert(
-                    _safe_uid(str(ob._p_oid)), _safe_uid(link))
+                    _safe_uid(str(ob.__uuid__)), _safe_uid(link))
 
             await conn.execute(str(query))
 
@@ -280,8 +279,7 @@ async def translate_links(content, container=None) -> str:
 
     req = None
     if container is None:
-        req = get_current_request()
-        container = req.container
+        container = find_container(content)
     container_url = get_object_url(container, req)
     dom = html.fromstring(content)
     contexts = {}
@@ -295,7 +293,7 @@ async def translate_links(content, container=None) -> str:
         current_uid = current_uid.split('/')[0].split('?')[0]
 
         error = False
-        while current_uid != container._p_oid:
+        while current_uid != container.__uuid__:
             if current_uid not in contexts:
                 # fetch from db
                 result = await _get_id(current_uid)

@@ -1,7 +1,7 @@
-1.0.9 (unreleased)
+5.0.0 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Upgrade to work with Guillotina 5
 
 
 1.0.8 (2019-06-18)

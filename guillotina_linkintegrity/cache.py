@@ -94,7 +94,7 @@ class cached_wrapper:
         async def _func(ob, *args, **kwargs):
             start_key = ob
             if this.ob_key:
-                start_key = ob._p_oid
+                start_key = ob.__uid__
             key = '{}-{}'.format(
                 start_key,
                 '-'.join(this.keys))
@@ -123,7 +123,7 @@ class invalidate_wrapper:
             keys = []
             for keyset in this.keysets:
                 key = '{}-{}'.format(
-                    ob._p_oid,
+                    ob.__uuid__,
                     '-'.join(keyset))
                 keys.append(key)
             await cache.publish_invalidation(*keys)

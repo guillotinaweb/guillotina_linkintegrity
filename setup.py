@@ -25,13 +25,12 @@ test_requirements = [
 
 setup(
     name='guillotina_linkintegrity',
-    version='1.0.9.dev0',
+    version='5.0.0.dev0',
     description='Link integrity support for guillotina',
     long_description=README + '\n\n' + CHANGELOG,
     long_description_content_type='text/markdown',
     install_requires=[
-        'guillotina>=4.4.10,<5',
-        'guillotina_rediscache',
+        'guillotina>=5.0.0a4',
         'lru-dict',
         'pypika',
         'lxml'

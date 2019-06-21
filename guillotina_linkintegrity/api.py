@@ -1,5 +1,6 @@
 from guillotina import configure
 from guillotina.interfaces import IResource
+from guillotina.utils import find_container
 from guillotina_linkintegrity import utils
 
 
@@ -16,8 +17,9 @@ async def get_aliases(context, request):
                    permission='guillotina.ModifyContent')
 async def patch_aliases(context, request):
     data = await request.json()
+    container = find_container(context)
     await utils.add_aliases(
-        context, data['paths'], container=request.container, moved=False)
+        context, data['paths'], container=container, moved=False)
     return {}
 
 
