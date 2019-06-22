@@ -53,7 +53,7 @@ class invalidate_wrapper:
                     ob.__uuid__,
                     '-'.join(keyset))
                 keys.append(key)
-            await cache.send_invalidation(None, keys, {})
+            await cache.send_invalidation(keys)
             return val
 
         return _func

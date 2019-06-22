@@ -32,11 +32,9 @@ async def object_moved(ob, event):
     cache = get_utility(ICacheUtility)
     execute.after_request(
         cache.send_invalidation,
-        None,
         ['{}-id'.format(ob.__uuid__),
          '{}-links'.format(ob.__uuid__),
-         '{}-links-to'.format(ob.__uuid__)],
-        {})
+         '{}-links-to'.format(ob.__uuid__)])
 
 
 @configure.subscriber(for_=ITraversalMissEvent)
