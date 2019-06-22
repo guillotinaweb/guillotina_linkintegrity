@@ -1,6 +1,10 @@
 import os
 
 from guillotina import configure
+from guillotina.component import get_utility
+from guillotina.contrib.catalog.pg import sqlq
+from guillotina.exceptions import ContainerNotFound
+from guillotina.interfaces import ICacheUtility
 from guillotina.interfaces import IObjectMovedEvent
 from guillotina.interfaces import IResource
 from guillotina.interfaces import ITraversalMissEvent
@@ -8,10 +12,9 @@ from guillotina.response import HTTPMovedPermanently
 from guillotina.utils import execute
 from guillotina.utils import find_container
 from guillotina.utils import get_content_path
+from guillotina.utils import get_current_container
 from guillotina.utils import get_object_by_oid
 from guillotina.utils import get_object_url
-from guillotina.component import get_utility
-from guillotina.interfaces import ICacheUtility
 from guillotina_linkintegrity import utils
 from pypika import PostgreSQLQuery as Query
 from pypika import Table
@@ -40,7 +43,9 @@ async def object_moved(ob, event):
 @configure.subscriber(for_=ITraversalMissEvent)
 async def check_content_moved(event):
     request = event.request
-    if getattr(request, 'container', None) is None:
+    try:
+        get_current_container()
+    except ContainerNotFound:
         return
 
     storage = utils.get_storage()
@@ -56,8 +61,8 @@ async def check_content_moved(event):
     query = Query.from_(aliases_table).select(
         aliases_table.zoid
     ).where(
-        (aliases_table.path == path) |
-        (aliases_table.path == path + '/' + view)
+        (aliases_table.path == sqlq(path)) |
+        (aliases_table.path == sqlq(path) + '/' + sqlq(view))
     )
 
     async with storage.pool.acquire() as conn:

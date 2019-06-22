@@ -21,16 +21,16 @@ class cached_wrapper:
         async def _func(ob, *args, **kwargs):
             start_key = ob
             if this.ob_key:
-                start_key = ob.__uid__
+                start_key = ob.__uuid__
             key = '{}-{}'.format(
                 start_key,
                 '-'.join(this.keys))
             cache = get_utility(ICacheUtility)
-            val = await cache.get(self.prefix + key)
+            val = await cache.get(key)
             if val is not None:
                 return val
             val = await func(ob, *args, **kwargs)
-            cache.put(self.prefix + key, val)
+            await cache.set(key, val)
             return val
 
         return _func
@@ -53,6 +53,10 @@ class invalidate_wrapper:
                     ob.__uuid__,
                     '-'.join(keyset))
                 keys.append(key)
+            await cache.invalidate(data={
+                'tid': None,
+                'keys': keys
+            })
             await cache.send_invalidation(keys)
             return val
 
