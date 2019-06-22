@@ -2,7 +2,7 @@
 language: python
 sudo: true
 python:
-  - "3.6"
+  - "3.7"
 sudo: required
 env:
   - DATABASE=postgresql
@@ -13,11 +13,12 @@ services:
   - docker
 # make sure we're on the latest version of postgresql
 addons:
-  postgresql: "9.6"
+  postgresql: "10"
 before_script:
   - psql -c 'create database guillotina;' -U postgres
 
 install:
+  - pip install -r requirements.txt
   - pip install -e .[test]
   - pip install flake8 codecov pytest-cov
 script:
