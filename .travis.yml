@@ -6,7 +6,6 @@ python:
   - "3.7"
 env:
   - DATABASE=postgresql
-  - DATABASE=cockroachdb
 
 services:
   - postgresql
@@ -26,3 +25,8 @@ script:
   - pytest -s --cov=guillotina_linkintegrity -s --tb=native -v --cov-report term-missing --cov-append ./guillotina_linkintegrity
 after_success:
   - codecov
+
+# safelist
+branches:
+  only:
+  - master
