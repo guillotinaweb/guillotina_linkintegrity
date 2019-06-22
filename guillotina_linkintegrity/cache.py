@@ -9,8 +9,6 @@ logger = logging.getLogger(__name__)
 
 class cached_wrapper:
 
-    prefix = 'licache-'
-
     def __init__(self, *keys, ob_key=True):
         self.keys = keys
         self.ob_key = ob_key

@@ -30,7 +30,7 @@ setup(
     long_description=README + '\n\n' + CHANGELOG,
     long_description_content_type='text/markdown',
     install_requires=[
-        'guillotina>=5.0.0a4[redis]',
+        'guillotina>=5.0.0a5[redis]',
         'aioredis',
         'lru-dict',
         'pypika',
