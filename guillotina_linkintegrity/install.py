@@ -10,10 +10,8 @@ class ManageAddon(Addon):
 
     @classmethod
     def install(cls, container, request):
-        registry = request.container_settings  # noqa
-        # install logic here...
+        pass
 
     @classmethod
     def uninstall(cls, container, request):
-        registry = request.container_settings  # noqa
-        # uninstall logic here...
+        pass

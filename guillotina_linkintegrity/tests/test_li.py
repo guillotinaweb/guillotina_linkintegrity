@@ -2,7 +2,7 @@ from guillotina.content import create_content_in_container
 from guillotina_linkintegrity import utils
 
 
-async def test_add_alias(guillotina, container_requester):
+async def test_add_alias(redis_container, guillotina, container_requester):
     async with container_requester:
         async with guillotina.transaction() as txn:
             root = await txn.manager.get_root()
@@ -18,7 +18,7 @@ async def test_add_alias(guillotina, container_requester):
             assert aliases[0]['path'] == '/foobar2'
 
 
-async def test_remove_alias(guillotina, container_requester):
+async def test_remove_alias(redis_container, guillotina, container_requester):
     async with container_requester:
         async with guillotina.transaction() as txn:
             root = await txn.manager.get_root()
@@ -41,7 +41,8 @@ async def test_remove_alias(guillotina, container_requester):
             assert aliases[0]['path'] == '/foobar3'
 
 
-async def test_get_inherited_aliases(guillotina, container_requester):
+async def test_get_inherited_aliases(
+        redis_container, guillotina, container_requester):
     async with container_requester:
         async with guillotina.transaction() as txn:
             root = await txn.manager.get_root()
@@ -62,7 +63,7 @@ async def test_get_inherited_aliases(guillotina, container_requester):
             assert aliases[0]['path'] == '/other/item'
 
 
-async def test_add_links(guillotina, container_requester):
+async def test_add_links(redis_container, guillotina, container_requester):
     async with container_requester:
         async with guillotina.transaction() as txn:
             root = await txn.manager.get_root()
@@ -80,7 +81,7 @@ async def test_add_links(guillotina, container_requester):
             assert len(await utils.get_links(folder)) == 2
 
 
-async def test_remove_links(guillotina, container_requester):
+async def test_remove_links(redis_container, guillotina, container_requester):
     async with container_requester:
         async with guillotina.transaction() as txn:
             root = await txn.manager.get_root()
@@ -101,7 +102,8 @@ async def test_remove_links(guillotina, container_requester):
             assert len(await utils.get_links(folder)) == 0
 
 
-async def test_update_links_from_html(guillotina, container_requester):
+async def test_update_links_from_html(
+        redis_container, guillotina, container_requester):
     async with container_requester:
         async with guillotina.transaction() as txn:
             root = await txn.manager.get_root()
@@ -117,24 +119,24 @@ async def test_update_links_from_html(guillotina, container_requester):
             await txn.commit()  # writes out content
 
             html = f'''<p>
-<a href="@resolveuid/{item1._p_oid}">item1</a>
-<a href="@resolveuid/{item2._p_oid}">item1</a>
-<a href="@resolveuid/{item3._p_oid}">item1</a>
-<img src="@resolveuid/{item3._p_oid}" />
+<a href="@resolveuid/{item1.__uuid__}">item1</a>
+<a href="@resolveuid/{item2.__uuid__}">item1</a>
+<a href="@resolveuid/{item3.__uuid__}">item1</a>
+<img src="@resolveuid/{item3.__uuid__}" />
 </p>'''
             await utils.update_links_from_html(folder, html)
 
             assert len(await utils.get_links(folder)) == 3
 
             html = f'''<p>
-<a href="@resolveuid/{item1._p_oid}">item1</a>
+<a href="@resolveuid/{item1.__uuid__}">item1</a>
 </p>'''
             await utils.update_links_from_html(folder, html)
             assert len(await utils.get_links(folder)) == 1
 
 
 async def test_update_links_from_html_ignore_invalid(
-        guillotina, container_requester):
+        redis_container, guillotina, container_requester):
     async with container_requester:
         async with guillotina.transaction() as txn:
             root = await txn.manager.get_root()
@@ -147,14 +149,15 @@ async def test_update_links_from_html_ignore_invalid(
             await txn.commit()  # writes out content
 
             html = f'''<p>
-<a href="@resolveuid/{item1._p_oid}">item1</a>
+<a href="@resolveuid/{item1.__uuid__}">item1</a>
 <a href="@resolveuid/foobar-expired">item1</a>
 </p>'''
             await utils.update_links_from_html(folder, html)
             assert len(await utils.get_links(folder)) == 1
 
 
-async def test_translate_html(guillotina, container_requester):
+async def test_translate_html(
+        redis_container, guillotina, container_requester):
     async with container_requester:
         async with guillotina.transaction() as txn:
             root = await txn.manager.get_root()
@@ -171,8 +174,8 @@ async def test_translate_html(guillotina, container_requester):
             await txn.commit()  # writes out content
 
             html = f'''<p>
-<a href="@resolveuid/{folder4._p_oid}">item1</a>
-<a href="@resolveuid/{folder3._p_oid}">item1</a>
+<a href="@resolveuid/{folder4.__uuid__}">item1</a>
+<a href="@resolveuid/{folder3.__uuid__}">item1</a>
 
 </p>'''
             result = await utils.translate_links(html, container)

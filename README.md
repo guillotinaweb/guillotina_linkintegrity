@@ -18,10 +18,9 @@ Features:
 
 ## Dependencies
 
-- Python >= 3.6
-- Guillotina
-- Redis(guillotina_rediscache configured)
-- PG/Cockroachdb
+- Python >= 3.7
+- Guillotina > 5
+- PG/Cockroachdb with redis
 
 
 ## Installation

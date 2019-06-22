@@ -3,7 +3,7 @@ import logging
 import asyncpg
 from guillotina import configure
 from guillotina.db.interfaces import IPostgresStorage
-from guillotina.db.oid import MAX_OID_LENGTH
+from guillotina.db.uid import MAX_UID_LENGTH
 from guillotina.db.storages.utils import get_table_definition
 from guillotina.interfaces import IDatabaseInitializedEvent
 
@@ -12,10 +12,10 @@ logger = logging.getLogger(__name__)
 
 _aliases_schema = {
     'zoid': (
-        f'VARCHAR({MAX_OID_LENGTH}) NOT NULL '
+        f'VARCHAR({MAX_UID_LENGTH}) NOT NULL '
         'REFERENCES objects ON DELETE CASCADE'),
     'container_id': (
-        f'VARCHAR({MAX_OID_LENGTH}) NOT NULL '
+        f'VARCHAR({MAX_UID_LENGTH}) NOT NULL '
         'REFERENCES objects ON DELETE CASCADE'),
     'path': 'VARCHAR(2000)',
     'moved': 'BOOLEAN NOT NULL'
@@ -23,10 +23,10 @@ _aliases_schema = {
 
 _links_schema = {
     'source_id': (
-        f'VARCHAR({MAX_OID_LENGTH}) NOT NULL '
+        f'VARCHAR({MAX_UID_LENGTH}) NOT NULL '
         'REFERENCES objects ON DELETE CASCADE'),
     'target_id': (
-        f'VARCHAR({MAX_OID_LENGTH}) NOT NULL '
+        f'VARCHAR({MAX_UID_LENGTH}) NOT NULL '
         'REFERENCES objects ON DELETE CASCADE')
 }
 

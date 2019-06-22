@@ -1,6 +1,11 @@
 from guillotina import testing
 
 
+annotations = {
+    'redis': None,
+}
+
+
 def base_settings_configurator(settings):
     if 'applications' in settings:
         settings['applications'].append('guillotina_linkintegrity')

@@ -1,16 +1,19 @@
 import json
 
 
-async def test_redirect_after_content_renamed(container_requester):
+async def test_redirect_after_content_renamed(
+        redis_container, container_requester):
     async with container_requester as requester:
         await requester('POST', '/db/guillotina', data=json.dumps({
             'id': 'foobar',
             '@type': 'Item'
         }))
-        await requester('POST', '/db/guillotina/foobar/@move',
-                        data=json.dumps({
-                            'new_id': 'foobar2'
-                        }))
+        resp, status = await requester(
+            'POST', '/db/guillotina/foobar/@move',
+            data=json.dumps({
+                'new_id': 'foobar2'
+            }))
+        assert status == 200
         _, status = await requester(
             'GET', '/db/guillotina/foobar', allow_redirects=False)
         assert status == 301
@@ -20,7 +23,7 @@ async def test_redirect_after_content_renamed(container_requester):
         assert status == 301
 
 
-async def test_api_aliases(container_requester):
+async def test_api_aliases(redis_container, container_requester):
     async with container_requester as requester:
         await requester('POST', '/db/guillotina', data=json.dumps({
             'id': 'foo',

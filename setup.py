@@ -1,6 +1,7 @@
+import re
+
 from setuptools import find_packages
 from setuptools import setup
-
 
 try:
     README = open('README.md').read()
@@ -22,20 +23,24 @@ test_requirements = [
     'pytest-docker-fixtures'
 ]
 
+def load_reqs(filename):
+    with open(filename) as reqs_file:
+        return [
+            re.sub('==', '>=', line) for line in reqs_file.readlines()
+            if not re.match('\s*#', line)
+        ]
+
+
+requirements = load_reqs('requirements.txt')
+
 
 setup(
     name='guillotina_linkintegrity',
-    version='1.0.9.dev0',
+    version='5.0.0.dev0',
     description='Link integrity support for guillotina',
     long_description=README + '\n\n' + CHANGELOG,
     long_description_content_type='text/markdown',
-    install_requires=[
-        'guillotina>=4.4.10,<5',
-        'guillotina_rediscache',
-        'lru-dict',
-        'pypika',
-        'lxml'
-    ],
+    install_requires=requirements,
     author='Nathan Van Gheem',
     author_email='vangheem@gmail.com',
     url='https://github.com/guillotinaweb/guillotina_linkintegrity',
