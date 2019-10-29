@@ -53,7 +53,6 @@ async def get_aliases(ob, storage=None) -> list:
     )
     async with storage.pool.acquire() as conn:
         results = await conn.fetch(str(query))
-        import pdb; pdb.set_trace()
     data = []
     for result in results:
         data.append({"path": result["path"], "moved": result["moved"]})
@@ -90,8 +89,6 @@ async def add_aliases(ob, paths: list, container=None, moved=True, storage=None)
         query = query.replace(f"'${i + 1}'", f"${i + 1}")
     async with storage.pool.acquire() as conn:
         await conn.execute(query, *values)
-    import pdb; pdb.set_trace()
-    pass
 
 
 @invalidate_wrapper(["aliases"])
