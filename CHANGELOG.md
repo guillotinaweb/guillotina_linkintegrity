@@ -1,7 +1,8 @@
 5.0.2 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Fixing Tests and Manifest
+  [bloodbare]
 
 
 5.0.1 (2019-10-29)
