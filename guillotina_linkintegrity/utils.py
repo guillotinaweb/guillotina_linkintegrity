@@ -44,7 +44,7 @@ async def get_aliases(ob, storage=None) -> list:
     query = Query.from_(aliases_table).select(
         aliases_table.path, aliases_table.moved
     ).where(
-        aliases_table.zoid == _safe_uid(ob.__uuid__)
+        aliases_table.zoid == _safe_uid(ob.uuid)
     )
     async with storage.pool.acquire() as conn:
         results = await conn.fetch(str(query))
@@ -63,6 +63,11 @@ async def add_aliases(ob, paths: list, container=None, moved=True,
     if not isinstance(moved, bool):
         raise Exception('Invalid type {}'.format(moved))
 
+    if hasattr(ob, 'context'):
+        uuid = ob.context.uuid
+    else:
+        uuid = ob.uuid
+
     storage = storage or get_storage()
     if storage is None:
         return
@@ -78,8 +83,8 @@ async def add_aliases(ob, paths: list, container=None, moved=True,
         path = '/' + path.strip('/')
         values.append(path)
         query = query.insert(
-            ob.__uuid__,
-            container.__uuid__,
+            uuid,
+            container.uuid,
             f'${i + 1}',
             moved,
         )
@@ -97,9 +102,14 @@ async def remove_aliases(ob, paths: list, storage=None):
     if storage is None:
         return
 
+    if hasattr(ob, 'context'):
+        uuid = ob.context.uuid
+    else:
+        uuid = ob.uuid
+
     for path in paths:
         query = Query.from_(aliases_table).where(
-            (aliases_table.zoid == _safe_uid(ob.__uuid__)) &
+            (aliases_table.zoid == _safe_uid(uuid)) &
             (aliases_table.path == '$1')
         )
         async with storage.pool.acquire() as conn:
@@ -138,10 +148,15 @@ async def get_links(ob) -> list:
     if storage is None:
         return []
 
+    if hasattr(ob, 'context'):
+        uuid = ob.context.uuid
+    else:
+        uuid = ob.uuid
+
     query = Query.from_(links_table).select(
         links_table.target_id
     ).where(
-        links_table.source_id == _safe_uid(ob.__uuid__)
+        links_table.source_id == _safe_uid(uuid)
     )
     async with storage.pool.acquire() as conn:
         results = await conn.fetch(str(query))
@@ -157,10 +172,15 @@ async def get_links_to(ob) -> list:
     if storage is None:
         return []
 
+    if hasattr(ob, 'context'):
+        uuid = ob.context.uuid
+    else:
+        uuid = ob.uuid
+
     query = Query.from_(links_table).select(
         links_table.source_id
     ).where(
-        links_table.target_id == _safe_uid(ob.__uuid__)
+        links_table.target_id == _safe_uid(uuid)
     )
     async with storage.pool.acquire() as conn:
         results = await conn.fetch(str(query))
@@ -176,10 +196,15 @@ async def add_links(ob, links):
     if storage is None:
         return
 
+    if hasattr(ob, 'context'):
+        uuid = ob.context.uuid
+    else:
+        uuid = ob.uuid
+
     query = Query.into(links_table).columns('source_id', 'target_id')
     for link in links:
         query = query.insert(
-            _safe_uid(str(ob.__uuid__)), _safe_uid(str(link.__uuid__)))
+            _safe_uid(str(uuid)), _safe_uid(str(link.uuid)))
     async with storage.pool.acquire() as conn:
         await conn.execute(str(query))
 
@@ -190,9 +215,14 @@ async def remove_links(ob, links):
     if storage is None:
         return
 
+    if hasattr(ob, 'context'):
+        uuid = ob.context.uuid
+    else:
+        uuid = ob.uuid
+
     query = Query.from_(links_table).where(
-        (links_table.source_id == _safe_uid(ob.__uuid__)) &
-        links_table.target_id.isin([_safe_uid(l.__uuid__) for l in links])
+        (links_table.source_id == _safe_uid(uuid)) &
+        links_table.target_id.isin([_safe_uid(l.uuid) for l in links])
     )
     async with storage.pool.acquire() as conn:
         await conn.execute(str(query.delete()))
@@ -200,9 +230,15 @@ async def remove_links(ob, links):
 
 @invalidate_wrapper(['links'], ['links-to'])
 async def update_links_from_html(ob, *contents):
+    
     storage = get_storage()
     if storage is None:
         return
+
+    if hasattr(ob, 'context'):
+        uuid = ob.context.uuid
+    else:
+        uuid = ob.uuid
 
     links = set()
     for content in contents:
@@ -219,7 +255,7 @@ async def update_links_from_html(ob, *contents):
         # delete existing if there are any
         async with storage.pool.acquire() as conn:
             await conn.execute(str(Query.from_(links_table).where(
-                links_table.source_id == _safe_uid(ob.__uuid__)
+                links_table.source_id == _safe_uid(uuid)
             ).delete()))
         return
 
@@ -235,9 +271,12 @@ async def update_links_from_html(ob, *contents):
             existing_oids.add(record['zoid'])
 
         # first delete all existing ones
-        await conn.execute(str(Query.from_(links_table).where(
-            links_table.source_id == _safe_uid(ob.__uuid__)
-        ).delete()))
+        try:
+            await conn.execute(str(Query.from_(links_table).where(
+                links_table.source_id == _safe_uid(uuid)
+            ).delete()))
+        except: 
+            import pdb; pdb.set_trace()
 
         # then, readd
         links = links & existing_oids
@@ -245,7 +284,7 @@ async def update_links_from_html(ob, *contents):
             query = Query.into(links_table).columns('source_id', 'target_id')
             for link in links:
                 query = query.insert(
-                    _safe_uid(str(ob.__uuid__)), _safe_uid(link))
+                    _safe_uid(str(uuid)), _safe_uid(link))
 
             await conn.execute(str(query))
 
@@ -293,7 +332,7 @@ async def translate_links(content, container=None) -> str:
         current_uid = current_uid.split('/')[0].split('?')[0]
 
         error = False
-        while current_uid != container.__uuid__:
+        while current_uid != container.uuid:
             if current_uid not in contexts:
                 # fetch from db
                 result = await _get_id(current_uid)

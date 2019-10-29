@@ -1,7 +1,8 @@
 5.0.1 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Fixing behavior richtext field and G5
+  [bloodbare]
 
 
 5.0.0 (2019-06-22)
