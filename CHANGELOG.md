@@ -1,4 +1,4 @@
-5.0.2 (unreleased)
+5.0.2 (2019-10-29)
 ------------------
 
 - Fixing Tests and Manifest
