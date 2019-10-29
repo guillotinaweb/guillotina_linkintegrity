@@ -17,13 +17,12 @@ class cached_wrapper:
         this = self
 
         async def _func(ob, *args, **kwargs):
-            if hasattr(ob, "context"):
-                uuid = ob.context.uuid
+            if this.ob_key and hasattr(ob, "context"):
+                start_key = ob.context.uuid
+            elif this.ob_key:
+                start_key = ob.uuid
             else:
-                uuid = ob.uuid
-            start_key = ob
-            if this.ob_key:
-                start_key = uuid
+                start_key = ob
             key = '{}-{}'.format(
                 start_key,
                 '-'.join(this.keys))
