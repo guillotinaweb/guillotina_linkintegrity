@@ -1,4 +1,4 @@
-5.0.1 (unreleased)
+5.0.1 (2019-10-29)
 ------------------
 
 - Fixing behavior richtext field and G5

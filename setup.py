@@ -36,7 +36,7 @@ requirements = load_reqs('requirements.txt')
 
 setup(
     name='guillotina_linkintegrity',
-    version='5.0.1.dev0',
+    version='5.0.1',
     description='Link integrity support for guillotina',
     long_description=README + '\n\n' + CHANGELOG,
     long_description_content_type='text/markdown',
