@@ -174,8 +174,8 @@ async def test_translate_html(
             await txn.commit()  # writes out content
 
             html = f'''<p>
-<a href="@resolveuid/{folder4.__uuid__}">item1</a>
-<a href="@resolveuid/{folder3.__uuid__}">item1</a>
+<a href="@resolveuid/{folder4.uuid}">item1</a>
+<a href="@resolveuid/{folder3.uuid}">item1</a>
 
 </p>'''
             result = await utils.translate_links(html, container)

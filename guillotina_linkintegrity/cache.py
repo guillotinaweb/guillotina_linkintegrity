@@ -17,9 +17,13 @@ class cached_wrapper:
         this = self
 
         async def _func(ob, *args, **kwargs):
+            if hasattr(ob, "context"):
+                uuid = ob.context.uuid
+            else:
+                uuid = ob.uuid
             start_key = ob
             if this.ob_key:
-                start_key = ob.__uuid__
+                start_key = uuid
             key = '{}-{}'.format(
                 start_key,
                 '-'.join(this.keys))
@@ -46,9 +50,13 @@ class invalidate_wrapper:
             val = await func(ob, *args, **kwargs)
             cache = get_utility(ICacheUtility)
             keys = []
+            if hasattr(ob, "context"):
+                uuid = ob.context.uuid
+            else:
+                uuid = ob.uuid
             for keyset in this.keysets:
                 key = '{}-{}'.format(
-                    ob.__uuid__,
+                    uuid,
                     '-'.join(keyset))
                 keys.append(key)
             await cache.invalidate(data={

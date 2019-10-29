@@ -50,6 +50,7 @@ async def test_api_aliases(redis_container, container_requester):
 
         resp, _ = await requester('GET', '/db/guillotina/foo/@aliases')
         assert len(resp['inherited']) == 0
+        import pdb; pdb.set_trace()
         assert len(resp['aliases']) == 1
 
         # not from move so should *not* inherit

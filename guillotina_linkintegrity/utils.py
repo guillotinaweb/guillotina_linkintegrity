@@ -16,14 +16,13 @@ from pypika import Table
 
 
 logger = logging.getLogger(__name__)
-aliases_table = Table('aliases')
-links_table = Table('links')
-objects_table = Table('objects')
+aliases_table = Table("aliases")
+links_table = Table("links")
+objects_table = Table("objects")
 
 
 def _safe_uid(uid):
-    return ''.join([l for l in uid
-                    if l in string.ascii_letters + string.digits + '|'])
+    return "".join([l for l in uid if l in string.ascii_letters + string.digits + "|"])  # noqa
 
 
 def get_storage():
@@ -31,39 +30,42 @@ def get_storage():
     storage = txn.manager._storage
     if not IPostgresStorage.providedBy(storage):
         # would already get big warning log about this
-        logger.debug('Storage does not support link integrity')
+        logger.debug("Storage does not support link integrity")
         return None
     return storage
 
 
-@cached_wrapper('aliases')
+@cached_wrapper("aliases")
 async def get_aliases(ob, storage=None) -> list:
     storage = storage or get_storage()
     if storage is None:
         return
-    query = Query.from_(aliases_table).select(
-        aliases_table.path, aliases_table.moved
-    ).where(
-        aliases_table.zoid == _safe_uid(ob.uuid)
+
+    if hasattr(ob, "context"):
+        uuid = ob.context.uuid
+    else:
+        uuid = ob.uuid
+
+    query = (
+        Query.from_(aliases_table)
+        .select(aliases_table.path, aliases_table.moved)
+        .where(aliases_table.zoid == _safe_uid(uuid))
     )
     async with storage.pool.acquire() as conn:
         results = await conn.fetch(str(query))
+        import pdb; pdb.set_trace()
     data = []
     for result in results:
-        data.append({
-            'path': result['path'],
-            'moved': result['moved']
-        })
+        data.append({"path": result["path"], "moved": result["moved"]})
     return data
 
 
-@invalidate_wrapper(['aliases'])
-async def add_aliases(ob, paths: list, container=None, moved=True,
-                      storage=None):
+@invalidate_wrapper(["aliases"])
+async def add_aliases(ob, paths: list, container=None, moved=True, storage=None):  # noqa
     if not isinstance(moved, bool):
-        raise Exception('Invalid type {}'.format(moved))
+        raise Exception("Invalid type {}".format(moved))
 
-    if hasattr(ob, 'context'):
+    if hasattr(ob, "context"):
         uuid = ob.context.uuid
     else:
         uuid = ob.uuid
@@ -74,48 +76,41 @@ async def add_aliases(ob, paths: list, container=None, moved=True,
 
     if container is None:
         container = find_container(ob)
-    query = Query.into(aliases_table).columns(
-        'zoid', 'container_id', 'path', 'moved')
+    query = Query.into(aliases_table).columns("zoid", "container_id", "path", "moved")  # noqa
     values = []
     for i, path in enumerate(paths):
         if not isinstance(path, str):
-            raise Exception('Invalid type {}'.format(path))
-        path = '/' + path.strip('/')
+            raise Exception("Invalid type {}".format(path))
+        path = "/" + path.strip("/")
         values.append(path)
-        query = query.insert(
-            uuid,
-            container.uuid,
-            f'${i + 1}',
-            moved,
-        )
+        query = query.insert(uuid, container.uuid, f"${i + 1}", moved,)
 
     query = str(query)
     for i in range(len(paths)):
         query = query.replace(f"'${i + 1}'", f"${i + 1}")
     async with storage.pool.acquire() as conn:
         await conn.execute(query, *values)
+    import pdb; pdb.set_trace()
+    pass
 
 
-@invalidate_wrapper(['aliases'])
+@invalidate_wrapper(["aliases"])
 async def remove_aliases(ob, paths: list, storage=None):
     storage = storage or get_storage()
     if storage is None:
         return
 
-    if hasattr(ob, 'context'):
+    if hasattr(ob, "context"):
         uuid = ob.context.uuid
     else:
         uuid = ob.uuid
 
     for path in paths:
         query = Query.from_(aliases_table).where(
-            (aliases_table.zoid == _safe_uid(uuid)) &
-            (aliases_table.path == '$1')
+            (aliases_table.zoid == _safe_uid(uuid)) & (aliases_table.path == "$1")  # noqa
         )
         async with storage.pool.acquire() as conn:
-            await conn.execute(
-                str(query.delete()).replace("'$1'", "$1"),
-                path)
+            await conn.execute(str(query.delete()).replace("'$1'", "$1"), path)
 
 
 async def get_inherited_aliases(ob) -> list:
@@ -129,93 +124,92 @@ async def get_inherited_aliases(ob) -> list:
     while context is not None and not IContainer.providedBy(context):
         context_path = get_content_path(context)
         for alias in await get_aliases(context):
-            if not alias['moved']:
+            if not alias["moved"]:
                 continue
-            path = alias['path']
-            current_sub_path = ob_path[len(context_path):]
-            path = os.path.join(path, current_sub_path.strip('/'))
-            alias['context_path'] = context_path
-            alias['path'] = path
+            path = alias["path"]
+            current_sub_path = ob_path[len(context_path) :]  # noqa
+            path = os.path.join(path, current_sub_path.strip("/"))
+            alias["context_path"] = context_path
+            alias["path"] = path
             data.append(alias)
         context = context.__parent__
 
     return data
 
 
-@cached_wrapper('links')
+@cached_wrapper("links")
 async def get_links(ob) -> list:
     storage = get_storage()
     if storage is None:
         return []
 
-    if hasattr(ob, 'context'):
+    if hasattr(ob, "context"):
         uuid = ob.context.uuid
     else:
         uuid = ob.uuid
 
-    query = Query.from_(links_table).select(
-        links_table.target_id
-    ).where(
-        links_table.source_id == _safe_uid(uuid)
+    query = (
+        Query.from_(links_table)
+        .select(links_table.target_id)
+        .where(links_table.source_id == _safe_uid(uuid))
     )
     async with storage.pool.acquire() as conn:
         results = await conn.fetch(str(query))
     data = []
     for result in results:
-        data.append(result['target_id'])
+        data.append(result["target_id"])
     return data
 
 
-@cached_wrapper('links-to')
+@cached_wrapper("links-to")
 async def get_links_to(ob) -> list:
     storage = get_storage()
     if storage is None:
         return []
 
-    if hasattr(ob, 'context'):
+    if hasattr(ob, "context"):
         uuid = ob.context.uuid
     else:
         uuid = ob.uuid
 
-    query = Query.from_(links_table).select(
-        links_table.source_id
-    ).where(
-        links_table.target_id == _safe_uid(uuid)
+    query = (
+        Query.from_(links_table)
+        .select(links_table.source_id)
+        .where(links_table.target_id == _safe_uid(uuid))
     )
     async with storage.pool.acquire() as conn:
         results = await conn.fetch(str(query))
     data = []
     for result in results:
-        data.append(result['source_id'])
+        data.append(result["source_id"])
     return data
 
 
-@invalidate_wrapper(['links'], ['links-to'])
+@invalidate_wrapper(["links"], ["links-to"])
 async def add_links(ob, links):
     storage = get_storage()
     if storage is None:
         return
 
-    if hasattr(ob, 'context'):
+    if hasattr(ob, "context"):
         uuid = ob.context.uuid
     else:
         uuid = ob.uuid
 
-    query = Query.into(links_table).columns('source_id', 'target_id')
+    query = Query.into(links_table).columns("source_id", "target_id")
     for link in links:
-        query = query.insert(
-            _safe_uid(str(uuid)), _safe_uid(str(link.uuid)))
+        query = query.insert(_safe_uid(str(uuid)), _safe_uid(str(link.uuid)))
     async with storage.pool.acquire() as conn:
         await conn.execute(str(query))
 
 
-@invalidate_wrapper(['links'], ['links-to'])
+@invalidate_wrapper(["links"], ["links-to"])
 async def remove_links(ob, links):
     storage = get_storage()
     if storage is None:
         return
 
-    if hasattr(ob, 'context'):
+    if hasattr(ob, "context"):
         uuid = ob.context.uuid
     else:
         uuid = ob.uuid
@@ -228,14 +222,14 @@ async def remove_links(ob, links):
         await conn.execute(str(query.delete()))
 
 
-@invalidate_wrapper(['links'], ['links-to'])
+@invalidate_wrapper(["links"], ["links-to"])
 async def update_links_from_html(ob, *contents):
-    
+
     storage = get_storage()
     if storage is None:
         return
 
-    if hasattr(ob, 'context'):
+    if hasattr(ob, "context"):
         uuid = ob.context.uuid
     else:
         uuid = ob.uuid
@@ -243,78 +237,81 @@ async def update_links_from_html(ob, *contents):
     links = set()
     for content in contents:
         dom = html.fromstring(content)
-        for node in dom.xpath('//a') + dom.xpath('//img'):
-            url = node.get('href', node.get('src', ''))
-            if 'resolveuid/' not in url:
+        for node in dom.xpath("//a") + dom.xpath("//img"):
+            url = node.get("href", node.get("src", ""))
+            if "resolveuid/" not in url:
                 continue
-            _, _, uid = url.partition('resolveuid/')
-            uid = uid.split('/')[0].split('?')[0]
+            _, _, uid = url.partition("resolveuid/")
+            uid = uid.split("/")[0].split("?")[0]
             links.add(_safe_uid(uid))
 
     if len(links) == 0:
         # delete existing if there are any
         async with storage.pool.acquire() as conn:
-            await conn.execute(str(Query.from_(links_table).where(
-                links_table.source_id == _safe_uid(uuid)
-            ).delete()))
+            await conn.execute(
+                str(
+                    Query.from_(links_table)
+                    .where(links_table.source_id == _safe_uid(uuid))
+                    .delete()
+                )
+            )
         return
 
     async with storage.pool.acquire() as conn:
         # make sure to filter out bad links
         existing_oids = set()
         query = str(
-            Query.from_(objects_table).select('zoid').where(
-                objects_table.zoid == '$1'
-            )).replace("'$1'", "any($1)")
+            Query.from_(objects_table).select("zoid").where(objects_table.zoid == "$1")  # noqa
+        ).replace("'$1'", "any($1)")
         results = await conn.fetch(query, list(links))
         for record in results:
-            existing_oids.add(record['zoid'])
+            existing_oids.add(record["zoid"])
 
         # first delete all existing ones
-        try:
-            await conn.execute(str(Query.from_(links_table).where(
-                links_table.source_id == _safe_uid(uuid)
-            ).delete()))
-        except: 
-            import pdb; pdb.set_trace()
+        await conn.execute(
+            str(
+                Query.from_(links_table)
+                .where(links_table.source_id == _safe_uid(uuid))
+                .delete()
+            )
+        )
 
         # then, readd
         links = links & existing_oids
         if len(links) > 0:
-            query = Query.into(links_table).columns('source_id', 'target_id')
+            query = Query.into(links_table).columns("source_id", "target_id")
             for link in links:
-                query = query.insert(
-                    _safe_uid(str(uuid)), _safe_uid(link))
+                query = query.insert(_safe_uid(str(uuid)), _safe_uid(link))
 
             await conn.execute(str(query))
 
 
-@cached_wrapper('id', ob_key=False)
+@cached_wrapper("id", ob_key=False)
 async def _get_id(zoid):
     storage = get_storage()
     if storage is None:
         return
     async with storage.pool.acquire() as conn:
-        result = await conn.fetch(str(
-            Query.from_(objects_table).select(
-                'id', 'parent_id').where(
-                    objects_table.zoid == _safe_uid(zoid))))
+        result = await conn.fetch(
+            str(
+                Query.from_(objects_table)
+                .select("id", "parent_id")
+                .where(objects_table.zoid == _safe_uid(zoid))
+            )
+        )
     if len(result) > 0:
-        return {
-            'id': result[0]['id'],
-            'parent': result[0]['parent_id']
-        }
+        return {"id": result[0]["id"], "parent": result[0]["parent_id"]}
     # could not find, this should not happen
 
 
 async def translate_links(content, container=None) -> str:
-    '''
+    """
     optimized url builder here so we don't pull
     full objects from database however, we lose caching.
 
     Would be great to move this into an implementation
     that worked with current cache/invalidation strategies
-    '''
+    """
 
     req = None
     if container is None:
@@ -323,13 +320,13 @@ async def translate_links(content, container=None) -> str:
     dom = html.fromstring(content)
     contexts = {}
 
-    for node in dom.xpath('//a') + dom.xpath('//img'):
-        url = node.get('href', node.get('src', ''))
-        if 'resolveuid/' not in url:
+    for node in dom.xpath("//a") + dom.xpath("//img"):
+        url = node.get("href", node.get("src", ""))
+        if "resolveuid/" not in url:
             continue
         path = []
-        _, _, current_uid = url.partition('resolveuid/')
-        current_uid = current_uid.split('/')[0].split('?')[0]
+        _, _, current_uid = url.partition("resolveuid/")
+        current_uid = current_uid.split("/")[0].split("?")[0]
 
         error = False
         while current_uid != container.uuid:
@@ -342,13 +339,14 @@ async def translate_links(content, container=None) -> str:
                     # could not find, this should not happen
                     error = True
                     break
-            path = [contexts[current_uid]['id']] + path
-            current_uid = contexts[current_uid]['parent']
+            path = [contexts[current_uid]["id"]] + path
+            current_uid = contexts[current_uid]["parent"]
 
         if error:
             continue
-        url = os.path.join(container_url, '/'.join(path))
-        attr = node.tag.lower() == 'a' and 'href' or 'src'
+        url = os.path.join(container_url, "/".join(path))
+        attr = node.tag.lower() == "a" and "href" or "src"
         node.attrib[attr] = url
 
-    return html.tostring(dom).decode('utf-8')
+    return html.tostring(dom).decode("utf-8")
+
