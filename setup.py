@@ -12,16 +12,6 @@ try:
 except IOError:
     CHANGELOG = ''
 
-test_requirements = [
-    'pytest>=4.1.1',
-    'docker',
-    'backoff',
-    'psycopg2-binary',
-    'pytest-asyncio>=0.8.0',
-    'pytest-cov>=2.6.1',
-    'coverage>=4.0.3',
-    'pytest-docker-fixtures'
-]
 
 def load_reqs(filename):
     with open(filename) as reqs_file:
@@ -32,11 +22,11 @@ def load_reqs(filename):
 
 
 requirements = load_reqs('requirements.txt')
-
+test_requirements = load_reqs('requirements-test.txt')
 
 setup(
     name='guillotina_linkintegrity',
-    version='5.0.3.dev0',
+    version='6.0.0.dev0',
     description='Link integrity support for guillotina',
     long_description=README + '\n\n' + CHANGELOG,
     long_description_content_type='text/markdown',

@@ -1,7 +1,25 @@
 from guillotina.content import create_content_in_container
 from guillotina_linkintegrity import utils
+import pytest
+import os
+
+pytestmark = pytest.mark.asyncio
 
 
+NOT_POSTGRES = os.environ.get("DATABASE", "DUMMY") in ("cockroachdb", "DUMMY")
+PG_CATALOG_SETTINGS = {
+    "applications": ["guillotina.contrib.catalog.pg"],
+    "load_utilities": {
+        "catalog": {
+            "provides": "guillotina.interfaces.ICatalogUtility",
+            "factory": "guillotina.contrib.catalog.pg.utility.PGSearchUtility",
+        }
+    },
+}
+
+
+@pytest.mark.app_settings(PG_CATALOG_SETTINGS)
+@pytest.mark.skipif(NOT_POSTGRES, reason="Only PG")
 async def test_add_alias(redis_container, guillotina, container_requester):
     async with container_requester:
         async with guillotina.transaction() as txn:
@@ -18,6 +36,8 @@ async def test_add_alias(redis_container, guillotina, container_requester):
             assert aliases[0]['path'] == '/foobar2'
 
 
+@pytest.mark.app_settings(PG_CATALOG_SETTINGS)
+@pytest.mark.skipif(NOT_POSTGRES, reason="Only PG")
 async def test_remove_alias(redis_container, guillotina, container_requester):
     async with container_requester:
         async with guillotina.transaction() as txn:
@@ -41,6 +61,8 @@ async def test_remove_alias(redis_container, guillotina, container_requester):
             assert aliases[0]['path'] == '/foobar3'
 
 
+@pytest.mark.app_settings(PG_CATALOG_SETTINGS)
+@pytest.mark.skipif(NOT_POSTGRES, reason="Only PG")
 async def test_get_inherited_aliases(
         redis_container, guillotina, container_requester):
     async with container_requester:
@@ -63,6 +85,8 @@ async def test_get_inherited_aliases(
             assert aliases[0]['path'] == '/other/item'
 
 
+@pytest.mark.app_settings(PG_CATALOG_SETTINGS)
+@pytest.mark.skipif(NOT_POSTGRES, reason="Only PG")
 async def test_add_links(redis_container, guillotina, container_requester):
     async with container_requester:
         async with guillotina.transaction() as txn:
@@ -81,6 +105,8 @@ async def test_add_links(redis_container, guillotina, container_requester):
             assert len(await utils.get_links(folder)) == 2
 
 
+@pytest.mark.app_settings(PG_CATALOG_SETTINGS)
+@pytest.mark.skipif(NOT_POSTGRES, reason="Only PG")
 async def test_remove_links(redis_container, guillotina, container_requester):
     async with container_requester:
         async with guillotina.transaction() as txn:
@@ -102,6 +128,8 @@ async def test_remove_links(redis_container, guillotina, container_requester):
             assert len(await utils.get_links(folder)) == 0
 
 
+@pytest.mark.app_settings(PG_CATALOG_SETTINGS)
+@pytest.mark.skipif(NOT_POSTGRES, reason="Only PG")
 async def test_update_links_from_html(
         redis_container, guillotina, container_requester):
     async with container_requester:
@@ -135,6 +163,8 @@ async def test_update_links_from_html(
             assert len(await utils.get_links(folder)) == 1
 
 
+@pytest.mark.app_settings(PG_CATALOG_SETTINGS)
+@pytest.mark.skipif(NOT_POSTGRES, reason="Only PG")
 async def test_update_links_from_html_ignore_invalid(
         redis_container, guillotina, container_requester):
     async with container_requester:
@@ -156,6 +186,8 @@ async def test_update_links_from_html_ignore_invalid(
             assert len(await utils.get_links(folder)) == 1
 
 
+@pytest.mark.app_settings(PG_CATALOG_SETTINGS)
+@pytest.mark.skipif(NOT_POSTGRES, reason="Only PG")
 async def test_translate_html(
         redis_container, guillotina, container_requester):
     async with container_requester:

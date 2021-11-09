@@ -1,7 +1,8 @@
 5.0.3 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Support guillotina >= 6.3.0
+  [frapell]
 
 
 5.0.2 (2019-10-29)

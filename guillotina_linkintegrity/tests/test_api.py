@@ -1,6 +1,24 @@
 import json
+import pytest
+import os
+
+pytestmark = pytest.mark.asyncio
 
 
+NOT_POSTGRES = os.environ.get("DATABASE", "DUMMY") in ("cockroachdb", "DUMMY")
+PG_CATALOG_SETTINGS = {
+    "applications": ["guillotina.contrib.catalog.pg"],
+    "load_utilities": {
+        "catalog": {
+            "provides": "guillotina.interfaces.ICatalogUtility",
+            "factory": "guillotina.contrib.catalog.pg.utility.PGSearchUtility",
+        }
+    },
+}
+
+
+@pytest.mark.app_settings(PG_CATALOG_SETTINGS)
+@pytest.mark.skipif(NOT_POSTGRES, reason="Only PG")
 async def test_redirect_after_content_renamed(
         redis_container, container_requester):
     async with container_requester as requester:
@@ -23,6 +41,8 @@ async def test_redirect_after_content_renamed(
         assert status == 301
 
 
+@pytest.mark.app_settings(PG_CATALOG_SETTINGS)
+@pytest.mark.skipif(NOT_POSTGRES, reason="Only PG")
 async def test_api_aliases(redis_container, container_requester):
     async with container_requester as requester:
         await requester('POST', '/db/guillotina', data=json.dumps({
