@@ -58,9 +58,7 @@ async def initialize(event):
     ]
     statements.extend(_initialize_statements)
     for statement in statements:
-        try:
-            async with storage.lock:
-                await storage.read_conn.execute(statement)
-        except asyncpg.exceptions.UniqueViolationError:
-            # this is okay on creation, means 2 getting created at same time
-            pass
+        async with storage.pool.acquire() as conn:
+            await conn.execute(
+                statement.format(storage._objects_table_name)
+            )

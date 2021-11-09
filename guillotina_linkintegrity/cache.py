@@ -58,10 +58,7 @@ class invalidate_wrapper:
                     uuid,
                     '-'.join(keyset))
                 keys.append(key)
-            await cache.invalidate(data={
-                'tid': None,
-                'keys': keys
-            })
+            await cache.delete_all(keys)
             await cache.send_invalidation(keys)
             return val
 

@@ -2,7 +2,7 @@ import os
 
 from guillotina import configure
 from guillotina.component import get_utility
-from guillotina.contrib.catalog.pg import sqlq
+from guillotina.contrib.catalog.pg.utils import sqlq
 from guillotina.exceptions import ContainerNotFound
 from guillotina.interfaces import ICacheUtility
 from guillotina.interfaces import IObjectMovedEvent
